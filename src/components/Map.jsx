@@ -46,7 +46,6 @@ function Map() {
         setFadeRadiusReverse(false);
         fadeRadius.current = true;
         clearPath();
-
         // Place end node
         if(info.rightButton || placeEnd) {
             if(e.layer?.id !== "selection-radius") {
@@ -113,6 +112,35 @@ function Map() {
         });
     }
 
+    async function measureOptimalPathfinding() {
+        if (!startNode || !endNode || loading || started || !state.current.graph) {
+            return;
+        }
+    
+        const startTime = performance.now();
+    
+        // Perform pathfinding without animation
+        state.current.reset(); // Reset the state to clear any previous counts
+        state.current.start(settings.algorithm);
+    
+        let expandedNodeCount = 0; // Initialize expanded node count
+    
+        while (!state.current.finished) {
+            state.current.nextStep();
+            expandedNodeCount += 1; // Increment expanded node count for each step
+        }
+    
+        const endTime = performance.now();
+        const runtimeMilliseconds = endTime - startTime;
+        const runtimeSeconds = runtimeMilliseconds / 1000; // Convert to seconds
+    
+        // Log the runtime in seconds and expanded node count
+        console.log(`Optimal Pathfinding Runtime: ${runtimeSeconds.toFixed(4)} seconds`);
+        console.log(`Number of Nodes Expanded: ${expandedNodeCount}`);
+    }
+    
+    
+    
     // Start new pathfinding animation
     function startPathfinding() {
         setFadeRadiusReverse(true);
@@ -121,6 +149,8 @@ function Map() {
             state.current.start(settings.algorithm);
             setStarted(true);
         }, 400);
+        measureOptimalPathfinding()
+
     }
 
     // Start or pause already running animation
@@ -156,6 +186,7 @@ function Map() {
 
     // Progress animation by one step
     function animateStep(newTime) {
+        
         const updatedNodes = state.current.nextStep();
         for(const updatedNode of updatedNodes) {
             updateWaypoints(updatedNode, updatedNode.referer);
