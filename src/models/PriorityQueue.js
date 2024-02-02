@@ -1,4 +1,4 @@
-class PriorityQueue {
+export default class PriorityQueue {
     constructor(comparator = (a, b) => a > b) {
         this.heap = [];
         this.comparator = comparator;
