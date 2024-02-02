@@ -49,15 +49,17 @@ export default class PathfindingState {
 
     /**
      * Resets state and initializes new pathfinding animation
+     * @param {string} algorithm - The pathfinding algorithm (e.g., "astar", "astar_kstep")
+     * @param {number} k - The k-step value (only needed for "astar_kstep" algorithm)
      */
-    start(algorithm) {
+    start(algorithm, k) {
         this.reset();
-        switch(algorithm) {
+        switch (algorithm) {
             case "astar":
                 this.algorithm = new AStar();
                 break;
             case "astar_kstep":
-                this.algorithm = new AStar_kstep();
+                this.algorithm = new AStar_kstep(k); // Pass the k value to the constructor
                 break;
             case "dijkstra":
                 this.algorithm = new Dijkstra();

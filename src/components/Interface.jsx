@@ -22,6 +22,10 @@ const Interface = forwardRef(({ canStart, started, animationEnded, playbackOn, t
     const rightDown = useRef(false);
     const leftDown = useRef(false);
 
+    const handleKValueChange = (newValue) => {
+        props.onKValueChanged(newValue);
+      };
+    
     // Expose showSnack to parent from ref
     useImperativeHandle(ref, () => ({
         showSnack(message, type = "error") {
@@ -289,7 +293,7 @@ const Interface = forwardRef(({ canStart, started, animationEnded, playbackOn, t
                             disableElevation
                             style={{ backgroundColor: "#404156", color: "#fff", textTransform: "none", fontSize: 16, paddingBlock: 8, justifyContent: "start" }}
                         >
-                            Locations
+                            LOCATION
                         </Button>
                         <Menu
                             id="locations-menu"
@@ -314,6 +318,32 @@ const Interface = forwardRef(({ canStart, started, animationEnded, playbackOn, t
                                 }}>{location.name}</MenuItem>
                             )}
                         </Menu>
+                    </div>
+                    <div className="side slider-container">
+                        <Typography id="k-slider">
+                            K value: {settings.k}
+                        </Typography>
+                        <Slider
+                            disabled={started && !animationEnded}
+                            min={1}
+                            max={10}
+                            step={1}
+                            value={settings.k}
+                            onChange={(e) => {
+                                setSettings({ ...settings, k: Number(e.target.value) });
+                            }}
+                            className="slider"
+                            aria-labelledby="k-slider"
+                            style={{ marginBottom: 1 }}
+                            marks={[
+                                {
+                                    value: 1,
+                                },
+                                {
+                                    value: 10,
+                                },
+                            ]}
+                        />
                     </div>
 
                     <div className="side slider-container">

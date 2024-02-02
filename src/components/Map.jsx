@@ -26,7 +26,7 @@ function Map() {
     const [cinematic, setCinematic] = useState(false);
     const [placeEnd, setPlaceEnd] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [settings, setSettings] = useState({ algorithm: "astar", radius: 4, speed: 5 });
+    const [settings, setSettings] = useState({ algorithm: "astar", radius: 4, speed: 5 }, { algorithm: "astar_kstep", radius: 4, speed: 5, k: 1 });
     const [colors, setColors] = useState(INITIAL_COLORS);
     const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
     const ui = useRef();
@@ -39,6 +39,7 @@ function Map() {
     const traceNode = useRef(null);
     const traceNode2 = useRef(null);
     const selectionRadiusOpacity = useSmoothStateChange(0, 0, 1, 400, fadeRadius.current, fadeRadiusReverse);
+
 
     async function mapClick(e, info, radius = null) {
         if(started && !animationEnded) return;
@@ -146,10 +147,14 @@ function Map() {
         setFadeRadiusReverse(true);
         setTimeout(() => {
             clearPath();
-            state.current.start(settings.algorithm);
+            if (settings.algorithm === "astar_kstep") {
+                state.current.start(settings.algorithm, settings.k); // Pass the k value
+            } else {
+                state.current.start(settings.algorithm);
+            }
             setStarted(true);
         }, 400);
-        measureOptimalPathfinding()
+        measureOptimalPathfinding();
 
     }
 
