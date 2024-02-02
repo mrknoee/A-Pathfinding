@@ -1,92 +1,94 @@
 import PathfindingAlgorithm from "./PathfindingAlgorithm";
+import PriorityQueue from '../PriorityQueue/';
 
 class AStar_kstep extends PathfindingAlgorithm {
     constructor(k) {
         super();
-        this.openList = [];
-        this.closedList = [];
-        this.k = k; // Number of steps to look ahead
+        this.openList = new PriorityQueue((a, b) => a.fscore - b.fscore);
+        this.closedList = new Set();
+        this.k = k; // The 'k' in k-step lookahead
+    }
+
+    calculateKStepHeuristic(node, endNode, k, currentPath = [], visited = new Set()) {
+        if (k === 0 || node === endNode) {
+            return this.heuristic(node, endNode);
+        }
+    
+        let minHeuristic = Infinity;
+        visited.add(node);
+    
+        for (let { node: neighbor } of node.neighbors) {
+            if (visited.has(neighbor)) continue; // Skip already visited nodes in the current path
+    
+            let newPath = [...currentPath, neighbor];
+            let pathCost = newPath.reduce((acc, n, i) => {
+                if (i === 0) return acc;
+                return acc + this.heuristic(newPath[i - 1], n);
+            }, 0);
+    
+            let futureHeuristic = this.calculateKStepHeuristic(neighbor, endNode, k - 1, newPath, new Set(visited));
+            minHeuristic = Math.min(minHeuristic, pathCost + futureHeuristic);
+        }
+    
+        visited.delete(node);
+        return minHeuristic;
+    }
+    
+
+    heuristic(node, endNode) {
+        // Implement your heuristic here; for example, Euclidean distance:
+        return Math.hypot(node.latitude - endNode.latitude, node.longitude - endNode.longitude);
     }
 
     start(startNode, endNode) {
         super.start(startNode, endNode);
-        this.openList = [this.startNode];
-        this.closedList = [];
-        this.startNode.distanceFromStart = 0;
-        this.startNode.distanceToEnd = this.heuristic(this.startNode, endNode);
-    }
-
-    heuristic(node, target) {
-        // Implement your heuristic function here
-        // For example, using Euclidean distance as a simple heuristic:
-        return Math.hypot(node.longitude - target.longitude, node.latitude - target.latitude);
-    }
-
-    kStepLookAhead(currentNode) {
-        // Implement the k-step look-ahead logic here
-        // This is a placeholder implementation
-        let minCost = Infinity;
-        let nextNode = null;
-
-        // Explore paths extending k steps ahead from the current node
-        // This is a simplified version and may not cover all edge cases
-        for (let step = 0; step < this.k; step++) {
-            for (const neighbor of currentNode.neighbors) {
-                const cost = currentNode.distanceFromStart + this.heuristic(neighbor.node, this.endNode);
-                if (cost < minCost) {
-                    minCost = cost;
-                    nextNode = neighbor.node;
-                }
-            }
-            currentNode = nextNode;
-        }
-
-        return minCost;
+        startNode.distanceFromStart = 0;
+        startNode.distanceToEnd = this.calculateKStepHeuristic(startNode, endNode, this.k);
+        this.openList.enqueue({ node: startNode, fscore: startNode.distanceToEnd });
     }
 
     nextStep() {
-        if (this.openList.length === 0) {
+        if (this.openList.isEmpty()) {
             this.finished = true;
             return [];
         }
 
-        const updatedNodes = [];
-        let currentNode = this.openList.reduce((acc, current) => current.totalDistance < acc.totalDistance ? current : acc, this.openList[0]);
-        this.openList.splice(this.openList.indexOf(currentNode), 1);
-        currentNode.visited = true;
+        let { node: currentNode } = this.openList.dequeue();
+        this.closedList.add(currentNode);
 
-        // Found end node
-        if (currentNode.id === this.endNode.id) {
-            this.openList = [];
+        if (currentNode === this.endNode) {
             this.finished = true;
-            return [currentNode];
+            return this.reconstructPath(currentNode);
         }
 
-        for (const n of currentNode.neighbors) {
-            const neighbor = n.node;
-            const edge = n.edge;
+        for (let { node: neighbor } of currentNode.neighbors) {
+            if (this.closedList.has(neighbor)) continue;
 
-            // Apply k-step look-ahead heuristic
-            const kStepCost = this.kStepLookAhead(neighbor);
-            const neighborCurrentCost = currentNode.distanceFromStart + edge.weight;
+            let tentative_gScore = currentNode.distanceFromStart + this.heuristic(currentNode, neighbor);
+            let tentative_fScore = tentative_gScore + this.calculateKStepHeuristic(neighbor, this.endNode, this.k);
 
-            if (this.openList.includes(neighbor) && neighbor.distanceFromStart <= neighborCurrentCost) continue;
-            if (this.closedList.includes(neighbor) && neighbor.distanceFromStart <= neighborCurrentCost) continue;
+            if (!this.openList.contains(neighbor) || tentative_gScore < neighbor.distanceFromStart) {
+                neighbor.distanceFromStart = tentative_gScore;
+                neighbor.distanceToEnd = tentative_fScore - tentative_gScore;
+                neighbor.parent = currentNode;
 
-            if (!this.openList.includes(neighbor) && !this.closedList.includes(neighbor)) {
-                this.openList.push(neighbor);
+                if (!this.openList.contains(neighbor)) {
+                    this.openList.enqueue({ node: neighbor, fscore: tentative_fScore });
+                }
             }
-
-            neighbor.distanceFromStart = neighborCurrentCost;
-            neighbor.distanceToEnd = kStepCost;
-            neighbor.referer = currentNode;
-            neighbor.parent = currentNode;
-            updatedNodes.push(neighbor);
         }
 
-        this.closedList.push(currentNode);
+        return [currentNode];
+    }
 
-        return [...updatedNodes, currentNode];
+    reconstructPath(endNode) {
+        let path = [];
+        let current = endNode;
+        while (current !== null) {
+            path.unshift(current);
+            current = current.parent;
+        }
+        return path;
     }
 }
 

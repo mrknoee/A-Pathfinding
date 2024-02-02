@@ -276,7 +276,7 @@ const Interface = forwardRef(({ canStart, started, animationEnded, playbackOn, t
                             disabled={!animationEnded && started}
                         >
                             <MenuItem value={"astar"}>A* </MenuItem>
-                            <MenuItem value={"aStar_kstep"}>A* k-step</MenuItem>
+                            <MenuItem value={"astar_kstep"}>A* k-step</MenuItem>
                             <MenuItem value={"dijkstra"}>Dijkstra&apos;s </MenuItem>
                             <MenuItem value={"bidirectional"}>Bidirectional Search </MenuItem>
                         </Select>
